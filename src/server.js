@@ -1,16 +1,18 @@
-import "dotenv/config";
-
 import cors from "cors";
+import dotenv from "dotenv";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import morgan from "morgan";
+import { fileURLToPath } from "node:url";
 
 import { connectDB } from "./config/db.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import publicRoutes from "./routes/publicRoutes.js";
 import walletRoutes from "./routes/walletRoutes.js";
+
+dotenv.config({ path: fileURLToPath(new URL("../.env", import.meta.url)) });
 
 const app = express();
 const port = Number(process.env.PORT) || 5000;
