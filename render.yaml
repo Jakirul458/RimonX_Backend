@@ -18,4 +18,4 @@ services:
       - key: MONGO_DB_NAME
         value: rimonx
       - key: CLIENT_URL
-        value: https://your-vercel-app-url.vercel.app
+        value: https://rimonx.vercel.app

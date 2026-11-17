@@ -14,20 +14,27 @@ import walletRoutes from "./routes/walletRoutes.js";
 
 const app = express();
 const port = Number(process.env.PORT) || 5000;
-const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
+const allowedOrigins = new Set((process.env.CLIENT_URL || "http://localhost:5173")
   .split(",")
   .map((origin) => origin.trim())
-  .filter(Boolean);
+  .filter(Boolean)
+  .map((origin) => new URL(origin).origin));
 
 app.use(helmet());
 app.use(
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+      let requestOrigin;
+      try {
+        requestOrigin = new URL(origin).origin;
+      } catch {
+        return callback(null, false);
+      }
+      if (allowedOrigins.has(requestOrigin)) {
         return callback(null, true);
       }
-      return callback(new Error("CORS policy violation"));
+      return callback(null, false);
     },
     credentials: true,
   }),

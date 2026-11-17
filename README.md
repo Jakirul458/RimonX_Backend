@@ -106,7 +106,9 @@ MONGO_DB_NAME=rimonx
 CLIENT_URL=https://your-frontend-domain.example.com
 ```
 
-4. The service will run `npm install` and `npm start`.
+4. The service will run `npm install` and `npm start`. `CLIENT_URL` must contain
+the frontend's origin (scheme and hostname, without a path); multiple origins
+can be comma-separated. A trailing slash is also normalized.
 5. After deploy, copy the Render service URL such as:
 
 ```text
