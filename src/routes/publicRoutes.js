@@ -27,8 +27,10 @@ router.get("/legal/privacy", (req, res) => {
     summary:
       "Account, wallet, and document metadata are stored securely for essential platform functionality.",
     points: [
-      "We use email and password authentication to secure user accounts.",
+      "We use your name, email, and mobile number for account management and support contact.",
+      "We use your email and password to secure account access.",
       "We store wallet, transaction, and administrative metadata required for billing and credit operations.",
+      "Administrators can view account contact details to provide support.",
       "We do not sell personal information to third parties.",
     ],
   });

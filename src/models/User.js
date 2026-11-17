@@ -18,6 +18,11 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [/^\S+@\S+\.\S+$/, "Please provide a valid email address."],
     },
+    phone: {
+      type: String,
+      trim: true,
+      maxlength: 24,
+    },
     passwordHash: {
       type: String,
       required: true,
@@ -50,6 +55,7 @@ userSchema.methods.toSafeObject = function toSafeObject() {
     id: this._id.toString(),
     fullName: this.fullName,
     email: this.email,
+    phone: this.phone ?? null,
     role: this.role,
     isActive: this.isActive,
     createdAt: this.createdAt,

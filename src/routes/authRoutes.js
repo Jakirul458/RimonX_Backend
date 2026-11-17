@@ -15,10 +15,10 @@ const signToken = (user) =>
   });
 
 router.post("/register", async (req, res) => {
-  const { fullName, email, password, confirmPassword } = req.body || {};
+  const { fullName, email, phone, password, confirmPassword } = req.body || {};
 
-  if (!fullName || !email || !password || !confirmPassword) {
-    return res.status(400).json({ message: "Full name, email, password, and confirm password are required." });
+  if (!fullName || !email || !phone || !password || !confirmPassword) {
+    return res.status(400).json({ message: "Full name, email, mobile number, password, and confirm password are required." });
   }
 
   if (typeof fullName !== "string" || fullName.trim().length < 2) {
@@ -27,6 +27,14 @@ router.post("/register", async (req, res) => {
 
   if (typeof email !== "string" || !/^\S+@\S+\.\S+$/.test(email)) {
     return res.status(400).json({ message: "Please provide a valid email address." });
+  }
+
+  if (
+    typeof phone !== "string" ||
+    phone.trim().length > 24 ||
+    !/^\+?[1-9]\d{7,14}$/.test(phone.trim().replace(/[\s()-]/g, ""))
+  ) {
+    return res.status(400).json({ message: "Please provide a valid mobile number with country code if needed." });
   }
 
   if (typeof password !== "string" || password.length < 8) {
@@ -49,6 +57,7 @@ router.post("/register", async (req, res) => {
     const user = await User.create({
       fullName: fullName.trim(),
       email: normalizedEmail,
+      phone: phone.trim(),
       passwordHash,
       role: "USER",
     });
@@ -148,6 +157,7 @@ router.get("/me", requireAuth, async (req, res) => {
         id: user._id.toString(),
         fullName: user.fullName,
         email: user.email,
+        phone: user.phone ?? null,
         role: user.role,
         isActive: user.isActive,
       },
