@@ -19,6 +19,11 @@ const walletSchema = new mongoose.Schema(
       type: String,
       default: "POINTS",
     },
+    recentExportOperationIds: {
+      type: [String],
+      default: [],
+      select: false,
+    },
   },
   {
     timestamps: true,

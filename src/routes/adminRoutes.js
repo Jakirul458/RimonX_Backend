@@ -1,7 +1,6 @@
 import bcrypt from "bcryptjs";
 import express from "express";
 
-import Transaction from "../models/Transaction.js";
 import User from "../models/User.js";
 import Wallet from "../models/Wallet.js";
 import { requireAdmin, requireAuth } from "../middleware/auth.js";
@@ -10,25 +9,12 @@ const router = express.Router();
 
 router.use(requireAuth, requireAdmin);
 
-const mapTransaction = (tx) => ({
-  id: tx._id.toString(),
-  user: tx.user ? tx.user.toString() : null,
-  type: tx.type,
-  amount: tx.amount,
-  description: tx.description,
-  status: tx.status,
-  operationId: tx.operationId,
-  toolName: tx.toolName,
-  createdAt: tx.createdAt,
-});
-
 router.get("/overview", async (req, res) => {
   try {
-    const [userCount, adminCount, totalPoints, recentTransactions] = await Promise.all([
+    const [userCount, adminCount, totalPoints] = await Promise.all([
       User.countDocuments({ role: "USER" }),
       User.countDocuments({ role: "ADMIN" }),
       Wallet.aggregate([{ $group: { _id: null, points: { $sum: "$points" } } }]),
-      Transaction.find().sort({ createdAt: -1 }).limit(20).lean(),
     ]);
 
     return res.json({
@@ -37,7 +23,6 @@ router.get("/overview", async (req, res) => {
         totalAdmins: adminCount,
         totalPointsAvailable: totalPoints[0]?.points || 0,
       },
-      recentTransactions: recentTransactions.map(mapTransaction),
     });
   } catch (error) {
     return res.status(500).json({ message: "Unable to load admin overview." });
@@ -76,7 +61,6 @@ router.get("/users/:id", async (req, res) => {
     }
 
     const wallet = await Wallet.findOne({ user: user._id }).lean();
-    const transactions = await Transaction.find({ user: user._id }).sort({ createdAt: -1 }).limit(50).lean();
 
     return res.json({
       user: {
@@ -97,7 +81,6 @@ router.get("/users/:id", async (req, res) => {
             updatedAt: wallet.updatedAt,
           }
         : { points: 0, currency: "POINTS" },
-      transactions: transactions.map(mapTransaction),
     });
   } catch (error) {
     return res.status(500).json({ message: "Unable to load user profile." });
@@ -134,8 +117,8 @@ router.patch("/users/:id/points", async (req, res) => {
   const { delta } = req.body || {};
   const adjustment = Number(delta ?? 0);
 
-  if (!Number.isFinite(adjustment) || !Number.isInteger(adjustment)) {
-    return res.status(400).json({ message: "Points adjustment must be an integer." });
+  if (!Number.isSafeInteger(adjustment) || adjustment <= 0) {
+    return res.status(400).json({ message: "Points adjustment must be a positive whole number." });
   }
 
   try {
@@ -150,22 +133,8 @@ router.patch("/users/:id/points", async (req, res) => {
       wallet = await Wallet.create({ user: user._id, points: 0, currency: "POINTS" });
     }
 
-    const previousPoints = wallet.points;
-    wallet.points = Math.max(0, wallet.points + adjustment);
+    wallet.points += adjustment;
     await wallet.save();
-
-    await Transaction.create({
-      user: user._id,
-      type: "admin_adjustment",
-      amount: adjustment,
-      description: `Admin adjustment: ${adjustment >= 0 ? "+" : ""}${adjustment} points`,
-      status: "success",
-      metadata: {
-        adminId: req.user.id,
-        previousPoints,
-        newPoints: wallet.points,
-      },
-    });
 
     return res.json({
       message: "Wallet updated successfully.",
@@ -181,10 +150,10 @@ router.patch("/users/:id/points", async (req, res) => {
 });
 
 router.post("/users/:id/reset-password", async (req, res) => {
-  const { temporaryPassword } = req.body || {};
+  const { newPassword } = req.body || {};
 
-  if (typeof temporaryPassword !== "string" || temporaryPassword.length < 8) {
-    return res.status(400).json({ message: "Temporary password must be at least 8 characters long." });
+  if (typeof newPassword !== "string" || newPassword.length < 8) {
+    return res.status(400).json({ message: "Password must be at least 8 characters long." });
   }
 
   try {
@@ -194,12 +163,11 @@ router.post("/users/:id/reset-password", async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
 
-    user.passwordHash = await bcrypt.hash(temporaryPassword, 12);
+    user.passwordHash = await bcrypt.hash(newPassword, 12);
     await user.save();
 
     return res.json({
-      message: "Temporary password set successfully.",
-      temporaryPassword,
+      message: "Password updated. Share it with the user directly.",
       user: user.toSafeObject(),
     });
   } catch (error) {

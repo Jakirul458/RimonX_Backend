@@ -16,7 +16,8 @@ This directory contains the MERN backend for the RimonX credit-based SaaS applic
 - User registration and login
 - Welcome bonus wallet credit: 10 free points
 - Export/download charge enforcement: 1 point per successful export or print action
-- Duplicate export protection using an operation id
+- Duplicate export protection using a bounded list of recent operation ids per wallet
+- No persistent transaction or activity history
 - Admin user and wallet management endpoints
 - Pricing and legal content endpoints
 

@@ -2,7 +2,6 @@ import bcrypt from "bcryptjs";
 import express from "express";
 import jwt from "jsonwebtoken";
 
-import Transaction from "../models/Transaction.js";
 import User from "../models/User.js";
 import Wallet from "../models/Wallet.js";
 import { requireAuth } from "../middleware/auth.js";
@@ -66,16 +65,6 @@ router.post("/register", async (req, res) => {
       user: user._id,
       points: 10,
       currency: "POINTS",
-    });
-
-    await Transaction.create({
-      user: user._id,
-      type: "welcome_bonus",
-      amount: 10,
-      description: "Welcome bonus credit: 10 free points",
-      status: "success",
-      operationId: `welcome-${user._id.toString()}`,
-      metadata: { source: "registration" },
     });
 
     const token = signToken(user);
